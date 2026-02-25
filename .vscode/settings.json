@@ -1,0 +1,5 @@
+{
+    "mesonbuild.configureOnOpen": false,
+    "C_Cpp.default.configurationProvider": "mesonbuild.mesonbuild",
+    "C_Cpp.default.compileCommands": "d:\\Code\\goobernatorial\\build/compile_commands.json"
+}
