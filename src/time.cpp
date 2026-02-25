@@ -2,7 +2,7 @@
 
 #include <SDL3/SDL.h>
 
-namespace time
+namespace gtime
 {
     static uint64_t _lastTick = 0;
     static double _fps = 0.0;

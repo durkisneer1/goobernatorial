@@ -1,6 +1,6 @@
 #pragma once
 
-namespace time
+namespace gtime
 {
 double getDelta();
 

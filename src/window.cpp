@@ -26,7 +26,7 @@ namespace window
 
     bool isOpen()
     {
-        time::_tick();
+        gtime::_tick();
         return _isOpen;
     }
 

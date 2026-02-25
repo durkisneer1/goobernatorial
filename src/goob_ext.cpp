@@ -128,8 +128,8 @@ NB_MODULE(goob, m)
     m.def("draw", &renderer::draw, "texture"_a, "transform"_a, "anchor"_a = Vec2{}, "pivot"_a = Vec2{});
 
     // ========== Time ==========
-    m.def("get_delta", &time::getDelta);
-    m.def("get_fps", &time::getFPS);
+    m.def("get_delta", &gtime::getDelta);
+    m.def("get_fps", &gtime::getFPS);
 
     // ========== Cleanup ==========
     m.def("init", &init, "Initialize goob");
