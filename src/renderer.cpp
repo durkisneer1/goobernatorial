@@ -10,6 +10,8 @@
 #endif
 
 static SDL_Renderer *_renderer = nullptr;
+static int cached_render_width = 1280;
+static int cached_render_height = 720;
 
 constexpr double TO_DEGREES(const double radians)
 {
@@ -20,6 +22,8 @@ namespace renderer
 {
     void clear(const Color &color)
     {
+        // Cache render output size at the start of frame
+        SDL_GetCurrentRenderOutputSize(_renderer, &cached_render_width, &cached_render_height);
         SDL_SetRenderDrawColor(_renderer, color.r, color.g, color.b, color.a);
         SDL_RenderClear(_renderer);
     }
@@ -40,15 +44,20 @@ namespace renderer
         if (texture.getAlpha() == 0.0f)
             return;
 
-        Rect dstRect{
-            0.0,
-            0.0,
-            clipArea.w * transform.scale.x,
-            clipArea.h * transform.scale.y,
-        };
+        Vec2 clipSize{clipArea.w, clipArea.h};
+        Vec2 dstSize = clipSize * transform.scale;
+        Vec2 dstPos = transform.pos - dstSize * anchor;
+        Rect dstRect{dstPos.x, dstPos.y, dstSize.x, dstSize.y};
 
-        dstRect.x = transform.pos.x - (dstRect.w * anchor.x);
-        dstRect.y = transform.pos.y - (dstRect.h * anchor.y);
+        // int w = cached_render_width;
+        // int h = cached_render_height;
+        // if (dstRect.x + dstRect.w < 0.0 ||
+        //     dstRect.x >= static_cast<double>(w) ||
+        //     dstRect.y + dstRect.h < 0.0 ||
+        //     dstRect.y >= static_cast<double>(h))
+        // {
+        //     return;
+        // }
 
         const SDL_FRect dstSDLRect{
             static_cast<float>(dstRect.x),
@@ -78,6 +87,64 @@ namespace renderer
         SDL_RenderTextureRotated(
             _renderer, texture.getSDL(), &srcSDLRect, &dstSDLRect, TO_DEGREES(transform.rot),
             &pivotPoint, flipAxis);
+    }
+
+    void draw_batch_soa(
+        const Texture &texture,
+        const double *pos_x, const double *pos_y,
+        const double *rot,
+        const double *scale_x, const double *scale_y,
+        size_t count,
+        const Vec2 &anchor, const Vec2 &pivot)
+    {
+        Rect clipArea = texture.getClipArea();
+        if (clipArea.w <= 1e-8 || clipArea.h <= 1e-8)
+            return;
+
+        SDL_Texture *sdlTex = texture.getSDL();
+
+        const SDL_FRect srcSDLRect{
+            static_cast<float>(clipArea.x),
+            static_cast<float>(clipArea.y),
+            static_cast<float>(clipArea.w),
+            static_cast<float>(clipArea.h),
+        };
+
+        SDL_FlipMode flipAxis = SDL_FLIP_NONE;
+        if (texture.flip.h)
+            flipAxis = static_cast<SDL_FlipMode>(flipAxis | SDL_FLIP_HORIZONTAL);
+        if (texture.flip.v)
+            flipAxis = static_cast<SDL_FlipMode>(flipAxis | SDL_FLIP_VERTICAL);
+
+        const double cw = clipArea.w;
+        const double ch = clipArea.h;
+
+        for (size_t i = 0; i < count; ++i)
+        {
+            double sx = scale_x[i];
+            double sy = scale_y[i];
+
+            double dw = cw * sx;
+            double dh = ch * sy;
+            double dx = pos_x[i] - dw * anchor.x;
+            double dy = pos_y[i] - dh * anchor.y;
+
+            const SDL_FRect dstSDLRect{
+                static_cast<float>(dx),
+                static_cast<float>(dy),
+                static_cast<float>(dw),
+                static_cast<float>(dh),
+            };
+
+            const SDL_FPoint pivotPoint{
+                static_cast<float>(dw * pivot.x),
+                static_cast<float>(dh * pivot.y),
+            };
+
+            SDL_RenderTextureRotated(
+                _renderer, sdlTex, &srcSDLRect, &dstSDLRect, TO_DEGREES(rot[i]),
+                &pivotPoint, flipAxis);
+        }
     }
 
     void _init(SDL_Window *window, const int width, const int height)

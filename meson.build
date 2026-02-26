@@ -23,6 +23,10 @@ sources = [
     'src/texture.cpp',
     'src/time.cpp',
     'src/window.cpp',
+    'src/ink/Lexer.cpp',
+    'src/ink/Parser.cpp',
+    'src/ink/Interpreter.cpp',
+    'src/ink_sprites.cpp',
 ]
 
 mod = python.extension_module(

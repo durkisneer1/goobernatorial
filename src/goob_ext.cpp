@@ -2,6 +2,7 @@
 #include <nanobind/stl/vector.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/variant.h>
+#include <nanobind/operators.h>
 
 #include "Events.hpp"
 #include "Window.hpp"
@@ -12,6 +13,7 @@
 #include "Color.hpp"
 #include "Transform.hpp"
 #include "Rect.hpp"
+#include "InkSprites.hpp"
 
 namespace nb = nanobind;
 using namespace nb::literals;
@@ -69,7 +71,25 @@ NB_MODULE(goob, m)
         .def(nb::init<>())
         .def(nb::init<double, double>())
         .def_rw("x", &Vec2::x)
-        .def_rw("y", &Vec2::y);
+        .def_rw("y", &Vec2::y)
+        .def(nb::self + nb::self)
+        .def(nb::self - nb::self)
+        .def(nb::self * nb::self)
+        .def(nb::self * double())
+        .def(double() * nb::self)
+        .def(nb::self / double())
+        .def(-nb::self)
+        .def(nb::self += nb::self)
+        .def(nb::self -= nb::self)
+        .def(nb::self *= double())
+        .def(nb::self /= double())
+        .def(nb::self == nb::self)
+        .def(nb::self != nb::self)
+        .def("length", &Vec2::length)
+        .def("length_sq", &Vec2::length_sq)
+        .def("normalized", &Vec2::normalized)
+        .def("__repr__", [](const Vec2 &v)
+             { return "Vec2(" + std::to_string(v.x) + ", " + std::to_string(v.y) + ")"; });
 
     // ========== Color ==========
     nb::class_<Color>(m, "Color")
@@ -134,4 +154,15 @@ NB_MODULE(goob, m)
     // ========== Cleanup ==========
     m.def("init", &init, "Initialize goob");
     m.def("quit", &quit, "Quit goob and clean up all subsystems");
+
+    // ========== InkSprites ==========
+    nb::class_<InkSprites>(m, "InkSprites")
+        .def(nb::init<Texture *, const Rect &, const std::string &>(),
+             "texture"_a, "bounds"_a, "script_path"_a,
+             nb::keep_alive<1, 2>())
+        .def("add", &InkSprites::add, "count"_a, "scale"_a = 1.0)
+        .def("remove", &InkSprites::remove, "count"_a = 1)
+        .def("count", &InkSprites::count)
+        .def("update", &InkSprites::update, "dt"_a)
+        .def("render", &InkSprites::render, "anchor"_a = Vec2{}, "pivot"_a = Vec2{});
 }
